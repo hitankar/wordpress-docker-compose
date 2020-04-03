@@ -1,0 +1,50 @@
+version: "3"
+
+services:
+  webserver:
+    build: 
+      context: ./docker/bin/webserver
+    container_name: 'wp-webserver'
+    restart: 'always'
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on: 
+      - mysql
+    volumes: 
+      - ./:/var/www/html/wp-content
+      - ./docker/config/php/php.ini:/usr/local/etc/php/php.ini
+      - ./docker/config/vhosts:/etc/apache2/sites-enabled
+      - ./docker/logs/apache2:/var/log/apache2
+    environment:
+      WORDPRESS_DB_HOST: 172.50.0.2
+      WORDPRESS_DB_USER: dbuser
+      WORDPRESS_DB_PASSWORD: dbuser
+      WORDPRESS_DB_NAME: wordpress
+    networks:
+      wp_net:
+        ipv4_address: 172.50.0.5
+      
+  mysql:
+    build: ./docker/bin/mysql
+    container_name: 'wp-mariadb'
+    restart: 'always'
+    ports:
+      - "3306:3306"
+    volumes: 
+      - ./docker/logs/mysql:/var/log/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: dbuser
+      MYSQL_PASSWORD: dbuser
+    networks:
+      wp_net:
+        ipv4_address: 172.50.0.2
+
+networks:
+  wp_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.50.0.0/16
